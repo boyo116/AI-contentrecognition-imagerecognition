@@ -9,9 +9,9 @@ headers ={
     'Content-Type':'application/x-www-form-urlencoded'
 }
 
-APP_ID = '11156578'
-API_KEY = '3K73kH6H4aGoZbUrE1N0oTO5'
-SECRET_KEY = 'YoL5g6BCnWG4mQvEo0TjyDPozlySdDRp'
+APP_ID = '11156578'# your own id
+API_KEY = '3K73kH6H4aGoZbUrE1N0oTO5'# your own key
+SECRET_KEY = 'YoL5g6BCnWG4mQvEo0TjyDPozlySdDRp' # your own skey
 
 def answer_review(content):
     url = "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%s&client_secret=%s&" % (
