@@ -1,2 +1,3 @@
 # AI-contentrecognition-imagerecognition
-base on baidu api 
+pic recognize
+video recognize
