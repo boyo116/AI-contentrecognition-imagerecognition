@@ -1,0 +1,64 @@
+import cv2
+import datetime
+import numpy as np
+import pandas as pd
+from sqlalchemy import create_engine
+import pymysql.cursors
+
+#engine = create_engine('mysql+pymysql://pcitc:123456@192.168.199.251:3306/pcitc')
+connection = pymysql.connect(host='192.168.199.251',port=3306,user='pcitc',password='123456',db='pcitc',charset='utf8',cursorclass=pymysql.cursors.DictCursor)
+cursor = connection.cursor()
+cap = cv2.VideoCapture(0)
+
+# DataFrame写入MySQL
+# 新建DataFrame
+
+
+ret, frame1 = cap.read()
+ret, frame2 = cap.read()
+now = datetime.datetime.now()
+datestrold = str(now.strftime("%Y/%m/%d %H:%M:%S"))
+datestr = str(now.strftime("%Y/%m/%d %H:%M:%S"))
+img_counter = 100
+while cap.isOpened():
+
+    diff = cv2.absdiff(frame1,frame2)
+    gray = cv2.cvtColor(diff,cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(gray,(5,5), 0)
+    _, thresh = cv2.threshold(blur,20,255,cv2.THRESH_BINARY)
+    dilated = cv2.dilate(thresh,None,iterations=3)
+    contours, hierarchy=cv2.findContours(dilated,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    for contour in contours:
+        (x,y,w,h)=cv2.boundingRect(contour)
+
+        if cv2.contourArea(contour) < 1000:
+            continue
+        cv2.rectangle(frame1,(x,y),(x+w,y+h),(0,255,0),2)
+        now = datetime.datetime.now()
+        datestr = str(now.strftime("%Y/%m/%d %H:%M:%S"))
+
+        img_name = "opencv_frame_{}.png".format(img_counter)
+
+        sql = "INSERT INTO ai_alarmmessage (alarmTypeName,alarmType,alarmName,catchPath,equipmentTypeName,equipmentType,alarmBrand,alarmTime) VALUES ('入侵报警','1','南新仓516','1','门禁','1','pcitc','"+datestr+"')"
+        if datestrold == datestr:
+            continue
+        datestrold = datestr
+        cursor.execute(sql)
+        print(datestr + '-' + datestrold)
+        connection.commit()
+        #df_write = pd.DataFrame({'alarmTypeName': ['入侵报警'], 'alarmType': ['1'], 'alarmName': ['南新仓516'], 'catchPath': ['1'], 'equipmentTypeName': ['门禁'], 'equipmentType': ['1'], 'alramBrand': ['pcitc'], 'equipmentType': [datestr]})
+        # 将df储存为MySQL中的表，不储存index列
+        #df_write.to_sql('ai_alarmmessage', engine, index=False)
+    #cv2.drawContours(frame1,contours,-1,(0,255,0),2)
+        cv2.imwrite(img_name, frame1)
+        cv2.putText(frame1,"Status:{}".format('Movement'),(10,20),cv2.FONT_HERSHEY_COMPLEX,
+                    1,(0,0,255),3)
+        img_counter += 1
+    cv2.imshow("feed",frame1)
+
+    frame1 = frame2
+    ret, frame2 = cap.read()
+
+    if cv2.waitKey(40) == 27:
+        break
+cv2.destroyAllWindows()
